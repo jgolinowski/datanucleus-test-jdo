@@ -457,6 +457,7 @@ public class JDOAnnotationReader extends AbstractAnnotationReader
                     for (Index idx : values)
                     {
                         IndexMetaData idxmd = JDOAnnotationUtils.getIndexMetaData(idx.name(), idx.table(), "" + idx.unique(), idx.members(), idx.columns());
+                        JDOAnnotationUtils.addExtensionsToMetaData(idxmd, idx.extensions());
                         if (idxmd.getNumberOfColumns() == 0 && idxmd.getNumberOfMembers() == 0)
                         {
                             NucleusLogger.METADATA.warn(Localiser.msg("044204", cls.getName()));
