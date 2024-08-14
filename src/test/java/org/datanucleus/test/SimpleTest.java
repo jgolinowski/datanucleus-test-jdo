@@ -1,46 +1,54 @@
 package org.datanucleus.test;
 
-import java.util.*;
-import org.junit.*;
-import javax.jdo.*;
+import javax.jdo.JDOHelper;
+import javax.jdo.PersistenceManagerFactory;
 
-import static org.junit.Assert.*;
-import mydomain.model.*;
+import mydomain.model.DummyWithOneIndex;
+import mydomain.model.DummyWithTwoIndices;
+import org.datanucleus.api.jdo.DataNucleusHelperJDO;
+import org.datanucleus.metadata.ClassMetaData;
 import org.datanucleus.util.NucleusLogger;
+import org.junit.Test;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 public class SimpleTest
 {
     @Test
-    public void testSimple()
-    {
-        NucleusLogger.GENERAL.info(">> test START");
-        PersistenceManagerFactory pmf = JDOHelper.getPersistenceManagerFactory("MyTest");
-
-        PersistenceManager pm = pmf.getPersistenceManager();
-        Transaction tx = pm.currentTransaction();
-        try
-        {
-            tx.begin();
-
-            // [INSERT code here to persist object required for testing]
-
-            tx.commit();
-        }
-        catch (Throwable thr)
-        {
-            NucleusLogger.GENERAL.error(">> Exception in test", thr);
-            fail("Failed test : " + thr.getMessage());
-        }
-        finally 
-        {
-            if (tx.isActive())
-            {
-                tx.rollback();
+    public void testSingleIndexWithExtensions() {
+        NucleusLogger.GENERAL.info(">> test single index with extensions START");
+        PersistenceManagerFactory pmf = null;
+        try {
+            pmf = JDOHelper.getPersistenceManagerFactory("MyTest");
+            ClassMetaData cmd = DataNucleusHelperJDO.getMetaDataForClass(pmf, DummyWithOneIndex.class);
+            cmd.getIndexMetaData().forEach((imd) -> {
+                assertNotNull(String.format("extensions of index %s should not be null", imd.getName()), imd.getExtensions());
+            });
+        } finally {
+            if (pmf != null) {
+                pmf.close();
             }
-            pm.close();
         }
+        NucleusLogger.GENERAL.info(">> test single index with extensions END");
+    }
 
-        pmf.close();
-        NucleusLogger.GENERAL.info(">> test END");
+    @Test
+    public void testMultipleIndicesWithExtensions() {
+        NucleusLogger.GENERAL.info(">> test multiple indices with extensions START");
+        PersistenceManagerFactory pmf = null;
+        try {
+            pmf = JDOHelper.getPersistenceManagerFactory("MyTest");
+            ClassMetaData cmd = DataNucleusHelperJDO.getMetaDataForClass(pmf, DummyWithTwoIndices.class);
+            cmd.getIndexMetaData().forEach((imd) -> {
+                // fails for datanucleus-api-jdo up to commit c8250f17319fe419f8fe3e6e8f431e8cf58f8af6 (currently latest master)
+                assertNotNull(String.format("extensions of index %s should not be null", imd.getName()), imd.getExtensions());
+            });
+        } finally {
+            if (pmf != null) {
+                pmf.close();
+            }
+        }
+        NucleusLogger.GENERAL.info(">> test multiple indices with extensions END");
     }
 }
